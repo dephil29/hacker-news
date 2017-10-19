@@ -1,5 +1,43 @@
 body {
-  margin: 0;
+  color: #222;
+  background: #f0f0f0;
+  font: 400 14px CoreSans, Arial;
+}
+
+a{
+  color: #22a;
+}
+
+a:hover{
+  text-decoration: underline;
+}
+
+ul, li{
+  list-style: none;
   padding: 0;
-  font-family: sans-serif;
+  margin: 0;
+}
+
+input{
+  padding: 10px;
+  border-radius: 5px;
+  outline: none;
+  margin-right: 10px;
+  border: 1px solid #dddddd;
+}
+
+button{
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #dddddd;
+  color: #555555;
+  cursor: pointer;
+}
+
+button: hover{
+  color: #222;
+}
+
+*: focus{
+  outline: none;
 }

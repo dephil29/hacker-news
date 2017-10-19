@@ -1,1 +1,7 @@
 https://hnpwa.com/
+
+one way data flow
+Component
+  this.state
+    render
+  View => setState sets a new state.
