@@ -2,49 +2,26 @@ import React, {Component} from "react";
 import "./App.css";
 
 const DEFAULT_QUERY = 'redux';
+const DEFAULT_HPP = "100";
+
 const PATH_BASE = "https://hn.algolia.com/api/v1";
 const PATH_SEARCH = "/search";
 const PARAM_SEARCH = "query=";
-
+const PARAM_PAGE = "page=";
+const PARAM_HPP = "hitsPerPage=";
 
 class Button extends Component {
   render(){
     const {onClick, className="", children} = this.props;
-    return (
-      <button
-        onClick={onClick}
-        className={className}
-        type="button"
-      >{children}</button>
-    )
+    return <button onClick={onClick} className={className} type="button">{children}</button>
   }
 }
 
-//es5 long form
-// function Search(props) {
-//
-//     const {value, onChange, children} = props;
-//     return (
-//       <form>
-//         {children}
-//         <input
-//         type="text"
-//         onChange={onChange}
-//         value={value}
-//         />
-//       </form>
-//     )
-//
-// }
-
-const Search = ({value, onChange, children}) => (
-  <form>
+const Search = ({value, onChange, onSubmit, children}) => (
+  <form onSubmit={onSubmit}>
     {children}
-    <input
-    type="text"
-    onChange={onChange}
-    value={value}
-    />
+    <input type="text" onChange={onChange} value={value} />
+    <button type="submit">{children}</button>
   </form>
 );
 
@@ -63,10 +40,10 @@ const smallColumn = {
 };
 
 function Table(props) {
-    const {list, pattern, onDismiss} = props;
+    const {list, onDismiss} = props;
     return(
       <div className="table">
-      {list.filter(isSearched(pattern)).map(item => (
+      {list.map(item => (
           <div key={item.objectID} className="table-row">
             <span style={largeColumn}>
               <a href={item.url}>{item.title}</a>
@@ -75,26 +52,13 @@ function Table(props) {
             <span style={smallColumn}>{item.num_comments}</span>
             <span style={smallColumn}>{item.points}</span>
             <span style={smallColumn}>
-              <Button
-                onClick={() => onDismiss(item.objectID)}
-                className="button-inline"
-              >X</Button>
+              <Button onClick={() => onDismiss(item.objectID)} className="button-inline">X</Button>
             </span>
           </div>
         ))}
       </div>
     )
 }
-
-const isSearched = searchTerm => item => item.title.toLowerCase().includes(
-  searchTerm.toLowerCase());
-
-// function isSearched(searchTerm){
-//   return function(item){
-//     // some condition that return true or false
-//     return item.title.toLowerCase().includes(searchTerm.toLowerCase());
-//   }
-// }
 
 class App extends Component {
   constructor(props){
@@ -107,15 +71,31 @@ class App extends Component {
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
   }
 
-  setSearchTopStories(result){
-    this.setState({result});
+  onSearchSubmit(event){
+    const {searchTerm} = this.state;
+    this.fetchSearchTopStories(searchTerm);
+    event.preventDefault();
   }
 
-  fetchSearchTopStories(searchTerm){
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
+  setSearchTopStories(result){
+    const {hits, page} = result;
+    const oldHits = page !== 0
+      ? this.state.result.hits
+      : [];
+
+    const updatedHits = [
+      ...oldHits,
+      ...hits
+    ]
+    this.setState({result: {hits: updatedHits, page}});
+  }
+
+  fetchSearchTopStories(searchTerm, page = 0){
+    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
       .then(response => response.json())
       .then(result => this.setSearchTopStories(result))
       .catch(e => e);
@@ -136,34 +116,21 @@ class App extends Component {
     const updatedHits = this.state.result.hits.filter(item => item.objectID !== id);
     this.setState({
       result: Object.assign({}, this.state.result, {hits: updatedHits})
-    });       //Object.assign is for deep merge to be able to delete one of the objects
+    });
   }
-  //es6 version of result is as follows = result: {...this.state.result, hits: updatedHits}
-  //the short version of code above
-  // this.state = {
-  //   list
-  // }
 
   render(){
     const {searchTerm, result} = this.state;
-
-    if(!result){
-      return null;
-    }
-
+    const page = (result && result.page) || 0;
     return (
       <div className="page">
         <div className="interactions">
-          <Search
-            value={searchTerm}
-            onChange={this.onSearchChange}
-            >Search Here</Search>
+          <Search value={searchTerm} onChange={this.onSearchChange} onSubmit={this.onSearchSubmit}>Search Here</Search>
         </div>
-        <Table
-          list={result.hits}
-          pattern={searchTerm}
-          onDismiss={this.onDismiss}
-        />
+        {result && <Table list={result.hits} onDismiss={this.onDismiss} />}
+        <div className="interaction">
+          <Button onClick={() => this.fetchSearchTopStories(searchTerm, page + 1)}>More</Button>
+        </div>
       </div>
     );
   }
