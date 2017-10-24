@@ -5,3 +5,8 @@ Component
   this.state
     render
   View => setState sets a new state.
+
+caching is hard don't do it use packages
+  react lazy cache
+  redis
+  memcache
