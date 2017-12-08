@@ -10,3 +10,12 @@ caching is hard don't do it use packages
   react lazy cache
   redis
   memcache
+
+3 cases to touch dom
+
+1. animations
+2.
+3.
+
+HOC = higher order component
+make code more declarative

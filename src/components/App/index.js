@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import "./index.css";
+
 import {
   DEFAULT_QUERY,
   DEFAULT_HPP,
@@ -12,6 +13,21 @@ import {
 import Button from "../Button";
 import Search from "../Search";
 import Table from "../Table";
+import Loading from "../Loading";
+
+// same as below but longer!
+// function withFoo(Component){
+//   return function(props){
+//     return <Component {...props} />;
+//   }
+// }
+
+const withLoading = Component => ({isLoading, ...rest}) =>
+  (isLoading
+    ? <Loading />
+    : <Component {...rest} />);
+
+const ButtonWithLoading = withLoading(Button);
 
 class App extends Component {
   constructor(props){
@@ -21,7 +37,8 @@ class App extends Component {
       result: null,
       searchKey: "",
       searchTerm: DEFAULT_QUERY,
-      error: null
+      error: null,
+      isLoading: false
     };
     this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
@@ -47,14 +64,8 @@ class App extends Component {
   setSearchTopStories(result){
     const {hits, page} = result;
     const{searchKey, results} = this.state;
-
-    // const oldHits = page !== 0
-    //   ? this.state.result.hits
-    //   : [];
-
     const oldHits = results && results[searchKey]
       ? results[searchKey].hits : [];
-
     const updatedHits = [
       ...oldHits,
       ...hits
@@ -62,11 +73,14 @@ class App extends Component {
     this.setState({results: {
       ...results,
       [searchKey]: {hits: updatedHits, page}
-    }
+    },
+    isLoading: false
     })
   }
 
   fetchSearchTopStories(searchTerm, page = 0){
+    this.setState({isLoading: true});
+
     fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
       .then(response => response.json())
       .then(result => this.setSearchTopStories(result))
@@ -97,7 +111,7 @@ class App extends Component {
   }
 
   render(){
-    const {searchTerm, results, searchKey, error} = this.state;
+    const {searchTerm, results, searchKey, error, isLoading} = this.state;
     // const page = (result && result.page) || 0;
     const page = (
       results &&
@@ -127,7 +141,10 @@ class App extends Component {
         ) : <Table list={list} onDismiss={this.onDismiss} />
         }
         <div className="interaction">
-          <Button onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>More</Button>
+        <ButtonWithLoading isLoading={isLoading}
+          onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
+          More
+        </ButtonWithLoading>
         </div>
       </div>
     );
